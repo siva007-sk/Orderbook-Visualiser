@@ -25,23 +25,39 @@ const DEMO_VENUES: Venue[] = [
   }
 ];
 
-// Generate realistic demo data
-const generateOrderBookLevel = (basePrice: number, side: 'bid' | 'ask', index: number) => {
+// Generate realistic demo data with very stable changes
+let previousQuantities: { [key: string]: number } = {};
+let updateCounter = 0;
+
+const generateOrderBookLevel = (basePrice: number, side: 'bid' | 'ask', index: number, venueId: string) => {
   const priceOffset = side === 'bid' ? -index * 0.5 : index * 0.5;
   const price = basePrice + priceOffset;
-  const quantity = Math.random() * 10 + 1;
+  
+  // Create very stable quantities with minimal variations
+  const key = `${venueId}-${side}-${index}`;
+  const prevQuantity = previousQuantities[key] || (3 + Math.random() * 4);
+  
+  // Only update every 4th cycle and with very small changes
+  let quantity = prevQuantity;
+  if (updateCounter % 4 === 0) {
+    const variation = (Math.random() - 0.5) * 0.1; // Very small variation
+    quantity = Math.max(0.5, prevQuantity + variation);
+  }
+  
+  previousQuantities[key] = quantity;
   
   return {
     price: Number(price.toFixed(2)),
-    quantity: Number(quantity.toFixed(4)),
+    quantity: Number(quantity.toFixed(2)), // Round to 2 decimals for stability
     total: 0, // Will be calculated
     timestamp: Date.now()
   };
 };
 
 const generateOrderBookData = (venue: Venue, basePrice: number): OrderBookData => {
-  const bids = Array.from({ length: 20 }, (_, i) => generateOrderBookLevel(basePrice, 'bid', i));
-  const asks = Array.from({ length: 20 }, (_, i) => generateOrderBookLevel(basePrice, 'ask', i));
+  updateCounter++; // Increment counter for stable updates
+  const bids = Array.from({ length: 20 }, (_, i) => generateOrderBookLevel(basePrice, 'bid', i, venue.id));
+  const asks = Array.from({ length: 20 }, (_, i) => generateOrderBookLevel(basePrice, 'ask', i, venue.id));
 
   // Calculate totals
   let bidTotal = 0;
@@ -130,11 +146,11 @@ export const useOrderbookData = (settings?: {
     setIsConnected(true);
     updateOrderbook();
 
-    // Only update in real-time mode
+    // Only update in real-time mode with even slower updates for stability
     if (settings?.realTimeMode !== false) {
       const interval = setInterval(() => {
         updateOrderbook();
-      }, 100); // Update every 100ms for smooth animation
+      }, 400); // Update every 400ms for maximum stability
 
       return () => {
         clearInterval(interval);

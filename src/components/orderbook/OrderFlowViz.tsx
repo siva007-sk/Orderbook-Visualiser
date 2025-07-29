@@ -76,14 +76,14 @@ export const OrderFlowViz = ({ orderbookData, enabled }: OrderFlowVizProps) => {
     const particle: FlowParticle = {
       position: new THREE.Vector3(x, y, z),
       velocity: new THREE.Vector3(
-        (Math.random() - 0.5) * 0.1,
-        action === 'add' ? 0.05 : -0.05,
-        (Math.random() - 0.5) * 0.1
+        (Math.random() - 0.5) * 0.05, // Slower horizontal movement
+        action === 'add' ? 0.02 : -0.02, // Slower vertical movement
+        (Math.random() - 0.5) * 0.05 // Slower depth movement
       ),
-      life: 1.0,
-      maxLife: 1.0,
+      life: 2.0, // Longer life for smoother fade
+      maxLife: 2.0,
       side,
-      size: Math.min(quantity * 0.5, 2),
+      size: Math.min(quantity * 0.3, 1.5), // Smaller particles
       action
     };
 
@@ -93,10 +93,10 @@ export const OrderFlowViz = ({ orderbookData, enabled }: OrderFlowVizProps) => {
   useFrame((state, delta) => {
     if (!enabled || !particlesRef.current) return;
 
-    // Update particles
+    // Update particles with smoother movement
     particlesData.current = particlesData.current.filter(particle => {
-      particle.life -= delta;
-      particle.position.add(particle.velocity.clone().multiplyScalar(delta * 10));
+      particle.life -= delta * 0.5; // Slower fade
+      particle.position.add(particle.velocity.clone().multiplyScalar(delta * 5)); // Slower movement
       return particle.life > 0;
     });
 
